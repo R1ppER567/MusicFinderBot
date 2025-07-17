@@ -1,6 +1,8 @@
+from asyncio import to_thread
+
 from aiogram import Router, types, filters, F
 
-from services.audio_finder import seatch_music
+from services.audio_finder import search_music
 from keyboards.tracks_keyboard import get_tracks_keyboard
 from common import consts
 
@@ -16,7 +18,8 @@ async def command_start_hanlder(msg: types.Message):
 
 @user_router.message(F.text)
 async def query_handler(message: types.Message):
-    tracks = seatch_music(query=message.text)
+    query = message.text.strip()
+    tracks = await to_thread(search_music, query)
     
     if not tracks:
         await message.answer('Nothing found')

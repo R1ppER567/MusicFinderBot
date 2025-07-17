@@ -5,7 +5,7 @@ from common.consts import NUM_OF_RESULTS
 yt = YTMusic()
 
 
-def seatch_music(query: str) -> list[dict]:
+def search_music(query: str) -> list[dict]:
     """Searches for music tracks based on the provided query.
 
     Args:
