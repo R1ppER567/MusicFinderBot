@@ -13,16 +13,20 @@ def get_tracks_keyboard(
     current_tracks = tracks[start:end]
 
     keyboard = InlineKeyboardBuilder()
-    for index, track in enumerate(current_tracks):
+    for track in current_tracks:
         title = f'{track['duration']} | {track['title']} - {track['artists'][0]['name']}'
+        video_id = track['videoId']
         keyboard.row(types.InlineKeyboardButton(
             text=title,
-            callback_data=f'track_{index}'
+            callback_data=f'download:{video_id}'
         ))
 
     nav_buttons = (
         types.InlineKeyboardButton(text="⬅️", callback_data="back"),
-        types.InlineKeyboardButton(text=f"{page}/{consts.LAST_PAGE}", callback_data="no_data"),  # this is an information button, it is not processed
+        types.InlineKeyboardButton(
+            text=f"{page}/{consts.LAST_PAGE}", 
+            callback_data="no_data"
+        ),  # this is an information button, it is not processed
         types.InlineKeyboardButton(text="➡️", callback_data="forward")
     )
     keyboard.row(*nav_buttons)
