@@ -54,7 +54,7 @@ async def download_handler(callback: types.CallbackQuery):
 
     await callback.message.answer_audio(
         audio=types.BufferedInputFile(
-            file=audio, filename=f'{title}.aac'
+            file=audio, filename=title + consts.AUDIO_FORMAT
         ), 
         title=title, 
         duration=duration
