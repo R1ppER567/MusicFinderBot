@@ -5,7 +5,7 @@
 
 ## Planned functionality
 - [x] Music search via YouTube Music API
-- [ ] Downloading tracks using yt-dlp
+- [x] Downloading tracks using yt-dlp
 - [ ] Telegram interface on aiogram
 
 ## For developers
