@@ -1,3 +1,4 @@
+from collections import defaultdict
 from asyncio import to_thread
 
 from aiogram import Router, types, filters, F
@@ -8,6 +9,7 @@ from keyboards.tracks_keyboard import get_tracks_keyboard
 from common import consts
 
 user_router = Router()
+user_sessions = defaultdict(defaultdict)
 
 
 @user_router.message(filters.CommandStart())
@@ -26,13 +28,18 @@ async def query_handler(message: types.Message):
         await message.answer('Nothing found')
         return None
     
-    await message.answer(
+    keyboard = await message.answer(
         'Select track:',
         reply_markup=get_tracks_keyboard(
             tracks=tracks,
             page=consts.FIRST_PAGE
         )
     )
+
+    user_sessions[message.from_user.id][keyboard.message_id] = {
+        'tracks': tracks,
+        'page': consts.FIRST_PAGE
+    }
 
 
 @user_router.callback_query(F.data.startswith('download:'))
@@ -59,9 +66,31 @@ async def download_handler(callback: types.CallbackQuery):
         title=title, 
         duration=duration
     )
-
+    
 
 @user_router.callback_query(F.data.in_({"forward", "back"}))
 async def pagination_handler(callback: types.CallbackQuery):
+    user_id = callback.from_user.id
+    keyboard_id = callback.message.message_id
+    session = user_sessions[user_id][keyboard_id]
+    tracks = session['tracks']
+    page = session['page']
+
+    if callback.data == 'forward':
+        current_page = min(page + 1, consts.LAST_PAGE)
+    else:
+        current_page = max(page - 1, consts.FIRST_PAGE)
+
+    if current_page == page:
+        await callback.answer()
+        return None
+
+    session['page'] = current_page
+    keyboard = get_tracks_keyboard(tracks, current_page)
+    await callback.message.edit_reply_markup(reply_markup=keyboard)
     await callback.answer()
-    await callback.message.answer('The pagination buttons don\'t work yet')
+
+
+@user_router.callback_query(F.data == 'no_data')
+async def info_button_handler(callback: types.CallbackQuery):
+    await callback.answer()

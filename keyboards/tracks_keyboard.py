@@ -22,12 +22,12 @@ def get_tracks_keyboard(
         ))
 
     nav_buttons = (
-        types.InlineKeyboardButton(text="⬅️", callback_data="back"),
+        types.InlineKeyboardButton(text='⬅️', callback_data='back'),
         types.InlineKeyboardButton(
-            text=f"{page}/{consts.LAST_PAGE}", 
-            callback_data="no_data"
+            text=f'{page}/{consts.LAST_PAGE}', 
+            callback_data='no_data' 
         ),  # this is an information button, it is not processed
-        types.InlineKeyboardButton(text="➡️", callback_data="forward")
+        types.InlineKeyboardButton(text='➡️', callback_data='forward')
     )
     keyboard.row(*nav_buttons)
 
