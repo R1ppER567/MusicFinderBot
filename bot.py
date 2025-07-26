@@ -9,6 +9,8 @@ load_dotenv(find_dotenv())
 
 from common import user_commands
 from handlers.user_private import user_router
+from middlewares.redis_middleware import RedisMiddleware
+from db.redis_client import RedisClient
 
 ALLOWED_UPDATES = ['message', 'callback_query']
 
@@ -22,6 +24,10 @@ async def main() -> None:
     bot = Bot(token=os.getenv('BOT_TOKEN'))
     dp = Dispatcher()
     dp.include_router(user_router)
+
+    redis_client = RedisClient(os.getenv('REDIS_URI'))
+    dp.message.middleware(RedisMiddleware(redis_client))
+    dp.callback_query.middleware(RedisMiddleware(redis_client))
 
     await bot.delete_webhook(drop_pending_updates=True)
     await bot.set_my_commands(commands=user_commands.USER_CMDS)

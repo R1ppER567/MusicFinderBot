@@ -1,4 +1,3 @@
-from collections import defaultdict
 from asyncio import to_thread
 
 from aiogram import Router, types, filters, F
@@ -6,10 +5,11 @@ from aiogram import Router, types, filters, F
 from services.audio_finder import search_music
 from services.audio_downloader import download_audio
 from keyboards.tracks_keyboard import get_tracks_keyboard
+from db.redis_client import RedisClient
+from db import session_storage 
 from common import consts
 
 user_router = Router()
-user_sessions = defaultdict(defaultdict)
 
 
 @user_router.message(filters.CommandStart())
@@ -20,7 +20,7 @@ async def command_start_hanlder(msg: types.Message):
 
 
 @user_router.message(F.text)
-async def query_handler(message: types.Message):
+async def query_handler(message: types.Message, redis: RedisClient):
     query = message.text.strip()
     tracks = await to_thread(search_music, query)
     
@@ -36,10 +36,12 @@ async def query_handler(message: types.Message):
         )
     )
 
-    user_sessions[message.from_user.id][keyboard.message_id] = {
-        'tracks': tracks,
-        'page': consts.FIRST_PAGE
-    }
+    await session_storage.save_tracks(redis, 
+        user_id=message.from_user.id,
+        message_id=keyboard.message_id,
+        tracks=tracks,
+        page= consts.FIRST_PAGE
+    )
 
 
 @user_router.callback_query(F.data.startswith('download:'))
@@ -69,12 +71,10 @@ async def download_handler(callback: types.CallbackQuery):
     
 
 @user_router.callback_query(F.data.in_({"forward", "back"}))
-async def pagination_handler(callback: types.CallbackQuery):
+async def pagination_handler(callback: types.CallbackQuery, redis: RedisClient):
     user_id = callback.from_user.id
-    keyboard_id = callback.message.message_id
-    session = user_sessions[user_id][keyboard_id]
-    tracks = session['tracks']
-    page = session['page']
+    message_id = callback.message.message_id
+    tracks, page = await session_storage.get_tracks(redis, user_id, message_id)
 
     if callback.data == 'forward':
         current_page = min(page + 1, consts.LAST_PAGE)
@@ -85,7 +85,7 @@ async def pagination_handler(callback: types.CallbackQuery):
         await callback.answer()
         return None
 
-    session['page'] = current_page
+    await session_storage.update_page(redis, user_id, message_id, page=current_page)
     keyboard = get_tracks_keyboard(tracks, current_page)
     await callback.message.edit_reply_markup(reply_markup=keyboard)
     await callback.answer()

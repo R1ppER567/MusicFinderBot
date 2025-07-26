@@ -42,4 +42,4 @@ async def update_page(
 ) -> None:
     data = await loads_data(redis, user_id, message_id)
     if data:
-        await save_tracks(user_id, message_id, data['tracks'], page)
+        await save_tracks(redis, user_id, message_id, data['tracks'], page)
