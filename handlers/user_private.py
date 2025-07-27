@@ -49,7 +49,9 @@ async def download_handler(callback: types.CallbackQuery):
     video_id = callback.data.split('download:')[1]
     url = f'https://music.youtube.com/watch?v={video_id}'
 
-    await callback.message.answer('Downloading track, please wait...')
+    downloading_msg = await callback.message.answer(
+        'Downloading track, please wait...'
+    )
 
     result, error = await to_thread(download_audio, url)
 
@@ -68,13 +70,22 @@ async def download_handler(callback: types.CallbackQuery):
         title=title, 
         duration=duration
     )
+    await downloading_msg.delete()
     
 
 @user_router.callback_query(F.data.in_({"forward", "back"}))
 async def pagination_handler(callback: types.CallbackQuery, redis: RedisClient):
     user_id = callback.from_user.id
     message_id = callback.message.message_id
-    tracks, page = await session_storage.get_tracks(redis, user_id, message_id)
+    result = await session_storage.get_tracks(redis, user_id, message_id)
+    
+    if result is None:
+        await callback.answer(
+            'The data out of range! Make new request',
+            show_alert=True
+        )
+        return None
+    tracks, page = result
 
     if callback.data == 'forward':
         current_page = min(page + 1, consts.LAST_PAGE)

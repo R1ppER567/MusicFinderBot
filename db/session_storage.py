@@ -31,7 +31,7 @@ async def get_tracks(
         message_id: int
 ) -> tuple[list[dict], int] | None:
     data = await loads_data(redis, user_id, message_id)
-    return data['tracks'], data['page'] if data else None
+    return (data['tracks'], data['page']) if data else None
 
 
 async def update_page(
